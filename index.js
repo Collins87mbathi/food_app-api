@@ -31,7 +31,9 @@ app.use('/api/v1/image',uploadRouter);
 app.use('/api/v1/products',productRouter);
 app.use('/api/v1/category',categoryRouter);
 
-
+app.get('/', (req,res)=>{
+ res.send('this is food delivery backend');
+})
 
 //listening 
 app.listen( PORT, () => {

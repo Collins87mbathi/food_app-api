@@ -1,8 +1,10 @@
 const User = require('../models/User');
 const bcryptjs = require("bcryptjs");
-const jwt = require('jsonwebtoken');
+// const jwt = require('jsonwebtoken');
 const sendEmail = require('../libs/sendMail');
+const crypto = require('crypto');
 const dotenv = require('dotenv');
+const Token = require('../models/Token');
 dotenv.config();
 
 
@@ -10,7 +12,7 @@ const register = async (req,res) => {
    
  try {
      
-    const {name, email, password} = req.body
+    const {name, email, password} = req.body;
 
     if(!name || !email || !password) 
        return res.status(400).json({msg: "please fill in all the fields."})
@@ -18,25 +20,32 @@ const register = async (req,res) => {
     if(!validateEmail(email))
       return res.status(400).json({msg:"Invalid emails"})
       
-      const user = await User.findOne({email})
+      let user = await User.findOne({email})
       if(user) return res.status(400).json({msg:"this email already exists"})
     
       if(password.length < 6 ) return res.status(400).json({msg:"password must be at least 6 characters."})
 
       const passwordHash = await bcryptjs.hash(password,12);
 
-      const newUser = {
+      user = await new User({
           name,email,password: passwordHash
-      }
-    const activation_token = createActivationToken(newUser);
-   const url = `${process.env.CLIENT_URL}/user/activate/${activation_token}` 
+      }).save();
+
+      const token = await new Token({
+         userId : user._id,
+         token:crypto.randomBytes(32).toString("hex"),
+      }).save();
+
+   //  const activation_token = createActivationToken(newUser);
+   const url = `${process.env.CLIENT_URL}/users/${user.id}/verify/${token.token}`;
    
-   sendEmail(email,url,"vertify your email address")
+   sendEmail(email,url,"vertify your email address");
 
    res.status(200).json({msg: "Register Success! please activate your email."})
 
  } catch (error) {
-     res.status(500).json({msg:error.message})
+     res.status(500).json({msg:error})
+     console.log(error);
  }
 
 
@@ -45,24 +54,19 @@ const register = async (req,res) => {
 const activateEmail = async (req, res) => {
   
 try {
-  const {activation_token} = req.body;
-  const user = jwt.verify(activation_token, process.env.ACTIVATION_TOKEN_SECRET)  
+   const user = await User.findOne({ _id: req.params.id });
+   if (!user) return res.status(400).send({ message: "Invalid link" });
 
-  const {name,email,password} = user
-  
-  const check = await User.findOne({email})
-  if(check) return res.status(400).json({msg:"This email already exists."})
+   const token = await Token.findOne({
+      userId: user._id,
+      token: req.params.token,
+   });
+   if (!token) return res.status(400).send({ message: "Invalid link" });
 
-  const newUser = new User({
-   name,email,password
+   await User.updateOne({ _id: user._id, verified: true });
+   await token.remove();
 
-  })
-
-  await newUser.save()
-
-  res.status(200).json({msg:"Account has been activated"})
-
-
+   res.status(200).send({ message: "Email verified successfully" });
 } catch (err) {
    return res.status(500).json({msg: err.message})
 }
@@ -79,40 +83,50 @@ const login = async (req,res) => {
      const isMatch = await bcryptjs.compare(password, user.password);
 
      if(!isMatch) return res.status(400).json({msg: "the password is in correct"})
-     
-     const refresh_token = createRefreshToken({id: user._id})
-     res.cookie('refreshtoken',refresh_token, {
-     httpOnly: true,
-     path: '/user/refresh_token',
-     maxAge: 7*24*60*1000 // 7days
 
-     })
+   if (!user.verified) {
+      let token = await Token.findOne({ userId: user._id });
+      if (!token) {
+         token = await new Token({
+            userId: user._id,
+            token: crypto.randomBytes(32).toString("hex"),
+         }).save();
+         const url = `${process.env.CLIENT_URL}/users/${user._id}/verify/${token.token}`;
+         sendEmail(user.email,url,"vertify your email address");
+      }
 
-     res.status(200).json({msg: "login success!"})
+      return res
+         .status(400)
+         .send({ message: "An Email sent to your account please verify" });
+   }
+
+     res.status(200).json({user, msg: "login success!"})
 
 
   } catch (error) {
-     return res.status(500).json({msg:error.message})
+   console.log(error);
+    res.status(500).json({msg:error.message})
+    
   }
 
 }
 
-const getAccessToken = (req,res) => {
+// const getAccessToken = (req,res) => {
 
-   try {
-      const rf_token = req.cookies.refreshtoken
-      if(!rf_token) return res.status(400).json({msg: "Please login now!"})
+//    try {
+//       const rf_token = req.cookies.refreshtoken
+//       if(!rf_token) return res.status(400).json({msg: "Please login now!"})
 
-      jwt.verify(rf_token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-          if(err) return res.status(400).json({msg: "Please login now!"})
+//       jwt.verify(rf_token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+//           if(err) return res.status(400).json({msg: "Please login now!"})
 
-          const access_token = createAccessToken({id: user.id})
-          res.status(200).json({access_token})
-      })
-  } catch (err) {
-      return res.status(500).json({msg: err.message})
-  }
-}
+//           const access_token = createAccessToken({id: user.id})
+//           res.status(200).json({access_token})
+//       })
+//   } catch (err) {
+//       return res.status(500).json({msg: err.message})
+//   }
+// }
 
 
 
@@ -125,22 +139,22 @@ function validateEmail(email) {
 
 }
 
-const createActivationToken = (payload) => {
+// const createActivationToken = (payload) => {
    
-   return jwt.sign(payload, process.env.ACTIVATION_TOKEN_SECRET, {expiresIn: '5m'})
+//    return jwt.sign(payload, process.env.ACTIVATION_TOKEN_SECRET, {expiresIn: '20days'})
 
-}
+// }
 
-const createAccessToken = (payload) => {
- return jwt.sign(payload,process.env.ACCESS_TOKEN_SECRET, {expiresIn: '15m'})
+// const createAccessToken = (payload) => {
+//  return jwt.sign(payload,process.env.ACCESS_TOKEN_SECRET, {expiresIn: '15m'})
 
-}
+// }
  
-const createRefreshToken = (payload) => {
+// const createRefreshToken = (payload) => {
   
-   return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {expiresIn: '7d'})
+//    return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {expiresIn: '7d'})
 
-}
+// }
 
 const forgotPassword = async (req,res) => {
    try {
@@ -148,10 +162,18 @@ const forgotPassword = async (req,res) => {
       const user = await Users.findOne({email})
       if(!user) return res.status(400).json({msg: "This email does not exist."})
 
-      const access_token = createAccessToken({id: user._id})
-      const url = `${CLIENT_URL}/user/reset/${access_token}`
+      let token = await Token.findOne({ userId: user._id });
+		if (!token) {
+			token = await new Token({
+				userId: user._id,
+				token: crypto.randomBytes(32).toString("hex"),
+			}).save();
+		}
 
-      sendMail(email, url, "Reset your password")
+		const url = `${process.env.CLIENT_URL}password-reset/${user._id}/${token.token}/`;
+
+
+      sendMail(user.email, url, "Reset your password")
       res.status(200).json({msg: "Re-send the password, please check your email."})
   } catch (err) {
       return res.status(500).json({msg: err.message})
@@ -230,4 +252,4 @@ const getUser = async (req,res)=> {
  
 
 
-module.exports = {register,activateEmail,login,getAccessToken,forgotPassword,updateUser,resetPassword,deleteUser,getAllUsers,logout,getUser}
+module.exports = {register,activateEmail,login,forgotPassword,updateUser,resetPassword,deleteUser,getAllUsers,logout,getUser}
