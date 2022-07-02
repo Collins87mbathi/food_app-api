@@ -162,7 +162,7 @@ function validateEmail(email) {
 const forgotPassword = async (req,res) => {
    try {
    
-		let  user = await User.findOne({ email: req.body.email});
+		let  user = await User.findOne({ "email": req.body.email});
 		if (!user)
 			return res
 				.status(409)
