@@ -205,9 +205,9 @@ const resetPassword = async (req,res) => {
 
 		if (!user.verified) user.verified = true;
 
-      const passwordHash = await bcrypt.hash(req.body.password, 12)
+      const passwordHash = await bcrypt.hash(req.body.password, 12);
 
-		user.password = passwordHash;
+		user.password =  passwordHash;
 		await user.save();
 		await token.remove();
 
