@@ -161,9 +161,9 @@ function validateEmail(email) {
 //post email for sending reset
 const forgotPassword = async (req,res) => {
    try {
-		const {email} = req.body;
+      const {email} = req.body;
 
-		let user = await User.findOne({ email });
+		let  user = await User.findOne({email});
 		if (!user)
 			return res
 				.status(409)
