@@ -158,10 +158,11 @@ function validateEmail(email) {
 
 // }
 
+//post email for sending reset
 const forgotPassword = async (req,res) => {
    try {
       const {email} = req.body
-      const user = await Users.findOne({email})
+      let user = await Users.findOne({email})
       if(!user) return res.status(400).json({msg: "This email does not exist."})
 
       let token = await Token.findOne({ userId: user._id });
@@ -172,7 +173,7 @@ const forgotPassword = async (req,res) => {
 			}).save();
 		}
 
-		const url = `${process.env.CLIENT_URL}password-reset/${user._id}/${token.token}/`;
+		const url =`https://perezfoods.netlify.app/#/password-reset/${user._id}/verify/${token.token}`;
 
 
       sendMail(user.email, url, "Reset your password")
@@ -182,15 +183,28 @@ const forgotPassword = async (req,res) => {
   }
 }
 
+//post email for sending reset
+
 const resetPassword = async (req,res) => {
    try {
       const {password} = req.body
       console.log(password)
+      const user = await User.findOne({ _id: req.params.id });
+		if (!user) return res.status(400).send({ message: "Invalid link" });
+
+		const token = await Token.findOne({
+			userId: user._id,
+			token: req.params.token,
+		});
+		if (!token) return res.status(400).send({ message: "Invalid link" });
+
+		if (!user.verified) user.verified = true;
+
       const passwordHash = await bcrypt.hash(password, 12)
 
-      await Users.findOneAndUpdate({_id: req.user.id}, {
-          password: passwordHash
-      })
+		user.password = passwordHash;
+		await user.save();
+		await token.remove();
 
       res.status(200).json({msg: "Password successfully changed!"})
   } catch (err) {
@@ -198,6 +212,26 @@ const resetPassword = async (req,res) => {
   }  
 
 }
+
+//clicking the link 
+
+const VertifyPassword = async (req,res) => {
+   try {
+		const user = await User.findOne({ _id: req.params.id });
+		if (!user) return res.status(400).send({ message: "Invalid link" });
+
+		const token = await Token.findOne({
+			userId: user._id,
+			token: req.params.token,
+		});
+		if (!token) return res.status(400).send({ message: "Invalid link" });
+
+		res.status(200).send("Valid Url");
+	} catch (error) {
+		res.status(500).send({ message: "Internal Server Error" });
+	}
+}
+
 
 const getAllUsers = async (req,res)=> {
    try {
@@ -254,4 +288,4 @@ const getUser = async (req,res)=> {
  
 
 
-module.exports = {register,activateEmail,login,forgotPassword,updateUser,resetPassword,deleteUser,getAllUsers,logout,getUser}
+module.exports = {register,activateEmail,login,forgotPassword,updateUser,resetPassword,deleteUser,getAllUsers,logout,getUser,VertifyPassword}

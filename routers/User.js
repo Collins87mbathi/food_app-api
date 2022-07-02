@@ -1,5 +1,5 @@
 const router = require('express').Router()
-const  {login,logout,register,resetPassword,forgotPassword,getUser,getAllUsers,activateEmail,updateUser,deleteUser} = require('../controllers/User');
+const  {login,logout,register,resetPassword,forgotPassword,getUser,getAllUsers,activateEmail,updateUser,deleteUser, VertifyPassword} = require('../controllers/User');
 const authAdmin = require('../middlewares/authAdmin');
 const auth = require('../middlewares/auth');
 
@@ -15,6 +15,8 @@ router.get('all_information',auth,authAdmin,getAllUsers);
 router.get('/logout',logout);
 router.patch('/update',auth,updateUser);
 router.delete('/delete/:id',auth,authAdmin,deleteUser);
-
+router.get('/:id/:token',VertifyPassword);
+router.post('/:id/:token',resetPassword);
+router.post('/password-reset',forgotPassword);
 
 module.exports = router;
