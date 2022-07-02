@@ -37,7 +37,7 @@ const register = async (req,res) => {
       }).save();
 
    //  const activation_token = createActivationToken(newUser);
-   const url = `${process.env.CLIENT_URL}users/${user.id}/verify/${token.token}`;
+   const url = `${process.env.CLIENT_URL}/users/${user._id}/verify/${token.token}`;
    
    sendEmail(email,url,"vertify your email address");
 
@@ -68,8 +68,9 @@ try {
 
    res.status(200).send({ message: "Email verified successfully" });
 } catch (err) {
-   return res.status(500).json({msg: err.message})
    console.log(err);
+   return res.status(500).json({msg: err.message})
+  
 }
 
 }
