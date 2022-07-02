@@ -39,7 +39,7 @@ const register = async (req,res) => {
    //  const activation_token = createActivationToken(newUser);
    const url = `https://perezfoods.netlify.app/#/users/${user.id}/verify/${token.token}`;
    
-   sendEmail(user.email,url,"vertify your email address");
+   sendEmail(email,url,"vertify your email address");
 
    res.status(200).json({msg: "Register Success! please activate your email."})
 
@@ -63,7 +63,7 @@ try {
    });
    if (!token) return res.status(400).send({ message: "Invalid link" });
 
-   await User.updateOne({ id: user._id, verified: true });
+   await User.updateOne({ _id: user._id }, { verified: true });
    await token.remove();
 
    res.status(200).send({ message: "Email verified successfully" });
@@ -94,7 +94,7 @@ const login = async (req,res) => {
             token: crypto.randomBytes(32).toString("hex"),
          }).save();
          const url = `https://perezfoods.netlify.app/#/users/${user._id}/verify/${token.token}`;
-         sendEmail(user.email,url,"vertify your email address");
+         sendEmail(email,url,"vertify your email address");
       }
 
       return res
