@@ -192,8 +192,8 @@ const forgotPassword = async (req,res) => {
 
 const resetPassword = async (req,res) => {
    try {
-      const {password} = req.body
-      console.log(password)
+      // const {password} = req.body
+      // console.log(password)
       const user = await User.findOne({ _id: req.params.id });
 		if (!user) return res.status(400).send({ message: "Invalid link" });
 
@@ -205,7 +205,7 @@ const resetPassword = async (req,res) => {
 
 		if (!user.verified) user.verified = true;
 
-      const passwordHash = await bcrypt.hash(password, 12)
+      const passwordHash = await bcrypt.hash(req.body.password, 12)
 
 		user.password = passwordHash;
 		await user.save();
