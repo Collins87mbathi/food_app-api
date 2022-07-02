@@ -194,7 +194,7 @@ const resetPassword = async (req,res) => {
    try {
       // const {password} = req.body
       // console.log(password)
-      let user = await User.findOne({ _id: req.params.id });
+    const user = await User.findOne({ _id: req.params.id });
 		if (!user) return res.status(400).send({ message: "Invalid link" });
 
 		const token = await Token.findOne({
@@ -203,7 +203,7 @@ const resetPassword = async (req,res) => {
 		});
 		if (!token) return res.status(400).send({ message: "Invalid link" });
 
-		// if (!user.verified) user.verified = true;
+		if (!user.verified) user.verified = true;
 
       const passwordHash = await bcrypt.hash(req.body.password, 12)
 
@@ -212,8 +212,9 @@ const resetPassword = async (req,res) => {
 		await token.remove();
 
 		res.status(200).send({ message: "Password reset successfully" });
-  } catch (err) {
-   res.status(500).send({ message: err });
+  } catch (error) {
+   res.status(500).send({ message: error});
+   console.log(error);
   }  
 
 }
