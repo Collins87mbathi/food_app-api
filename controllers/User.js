@@ -37,7 +37,7 @@ const register = async (req,res) => {
       }).save();
 
    //  const activation_token = createActivationToken(newUser);
-   const url = `${process.env.CLIENT_URL}/users/${user._id}/verify/${token.token}`;
+   const url = `https://perezfoods.netlify.app/#/users/${user._id}/verify/${token.token}`;
    
    sendEmail(email,url,"vertify your email address");
 
@@ -93,7 +93,7 @@ const login = async (req,res) => {
             userId: user._id,
             token: crypto.randomBytes(32).toString("hex"),
          }).save();
-         const url = `${process.env.CLIENT_URL}/users/${user._id}/verify/${token.token}`;
+         const url = `https://perezfoods.netlify.app/#/users/${user._id}/verify/${token.token}`;
          sendEmail(user.email,url,"vertify your email address");
       }
 
