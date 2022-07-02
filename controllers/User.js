@@ -161,11 +161,15 @@ function validateEmail(email) {
 //post email for sending reset
 const forgotPassword = async (req,res) => {
    try {
-      const {email} = req.body
-      let user = await Users.findOne({email})
-      if(!user) return res.status(400).json({msg: "This email does not exist."})
+		const {email} = req.body;
 
-      let token = await Token.findOne({ userId: user._id });
+		let user = await User.findOne({ email });
+		if (!user)
+			return res
+				.status(409)
+				.send({ message: "User with given email does not exist!" });
+
+		let token = await Token.findOne({ userId: user._id });
 		if (!token) {
 			token = await new Token({
 				userId: user._id,
@@ -174,14 +178,16 @@ const forgotPassword = async (req,res) => {
 		}
 
 		const url =`https://perezfoods.netlify.app/#/password-reset/${user._id}/verify/${token.token}`;
+		await sendEmail(user.email,url, "Reset Password");
 
-
-      sendMail(user.email, url, "Reset your password")
-      res.status(200).json({msg: "Re-send the password, please check your email."})
-  } catch (err) {
-      return res.status(500).json({msg: err.message})
-  }
+		res
+			.status(200)
+			.send({ message: "Password reset link sent to your email account" });
+	} catch (error) {
+		res.status(500).send({ message: "Internal Server Error" });
+	}
 }
+
 
 //post email for sending reset
 
