@@ -37,7 +37,7 @@ const register = async (req,res) => {
       }).save();
 
    //  const activation_token = createActivationToken(newUser);
-   const url = `https://perezfoods.netlify.app/#/users/${user._id}/verify/${token.token}`;
+   const url = `https://perezfoods.netlify.app/#/users/${user.id}/verify/${token.token}`;
    
    sendEmail(email,url,"vertify your email address");
 
