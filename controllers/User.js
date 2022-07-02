@@ -54,7 +54,7 @@ const register = async (req,res) => {
 const activateEmail = async (req, res) => {
   
 try {
-   const user = await User.findOne({ id: req.params.id });
+   const user = await User.findOne({ _id: req.params.id });
    if (!user) return res.status(400).send({ message: "Invalid link" });
 
    const token = await Token.findOne({
