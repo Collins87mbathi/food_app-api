@@ -63,8 +63,15 @@ try {
     res.status(500).json({msg:error.message});
 }
 
+}
 
-
+const getProduct = async (req,res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        res.status(200).json(product)
+    } catch (error) {
+        res.status(500).json({error});
+    }
 }
 
 const getProducts = async (req,res) => {
@@ -108,4 +115,4 @@ const deleteProducts = async (req,res) => {
     }
 }
 
-module.exports = {createProducts,getProducts,deleteProducts,updateProducts};
+module.exports = {createProducts,getProducts,deleteProducts,updateProducts,getProduct};
