@@ -79,6 +79,9 @@ const login = async (req,res) => {
   
   try {
      const {email, password} = req.body;
+     if(!email || !password) 
+     return res.status(400).json({msg: "please fill in all the fields."})
+     
      const user = await User.findOne({email})
      if(!user) return res.status(400).json({msg:"this email does not exist"})
 
@@ -107,7 +110,7 @@ const login = async (req,res) => {
 
   } catch (error) {
    console.log(error);
-    res.status(500).json({msg:error.message})
+    res.status(500).json({msg:error})
     
   }
 
