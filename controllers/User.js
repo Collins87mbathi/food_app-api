@@ -44,7 +44,7 @@ const register = async (req,res) => {
    res.status(200).json({msg: "Register Success! please activate your email."})
 
  } catch (error) {
-     res.status(500).json({msg:error})
+     res.status(500).json({error})
      console.log(error);
  }
 
@@ -66,10 +66,10 @@ try {
    await User.updateOne({ _id: user._id }, { verified: true });
    await token.remove();
 
-   res.status(200).send({ message: "Email verified successfully" });
+   res.status(200).send({ msg: "Email verified successfully" });
 } catch (err) {
    console.log(err);
-   return res.status(500).json({msg: err.message})
+   return res.status(500).send({msg: err.message})
   
 }
 
@@ -80,14 +80,14 @@ const login = async (req,res) => {
   try {
      const {email, password} = req.body;
      if(!email || !password) 
-     return res.status(400).json({msg: "please fill in all the fields."})
+     return res.status(400).send({msg: "please fill in all the fields."})
      
      const user = await User.findOne({email})
-     if(!user) return res.status(400).json({msg:"this email does not exist"})
+     if(!user) return res.status(400).send({msg:"this email does not exist"})
 
      const isMatch = await bcryptjs.compare(password, user.password);
 
-     if(!isMatch) return res.status(400).json({msg: "the password is in correct"})
+     if(!isMatch) return res.status(400).send({msg: "the password is incorrect"})
 
    if (!user.verified) {
       let token = await Token.findOne({ userId: user._id });
@@ -102,7 +102,7 @@ const login = async (req,res) => {
 
       return res
          .status(400)
-         .send({ message: "An Email sent to your account please verify" });
+         .send({ msg: "An Email sent to your account please verify" });
    }
 
      res.status(200).json({user, msg: "login success!"})
@@ -110,7 +110,7 @@ const login = async (req,res) => {
 
   } catch (error) {
    console.log(error);
-    res.status(500).json({msg:error})
+    res.status(500).json({error})
     
   }
 
