@@ -82,6 +82,9 @@ const login = async (req,res) => {
      if(!email || !password) 
      return res.status(400).send({msg: "please fill in all the fields."})
      
+     if(!validatePassword(password)) {
+      return res.status(400).send({msg: "password must contain atleast one upper case and a number"})
+      }
      const user = await User.findOne({email})
      if(!user) return res.status(400).send({msg:"this email does not exist"})
 
@@ -135,7 +138,10 @@ const login = async (req,res) => {
 
 
 
-
+function validatePassword(password) {
+   const re =  /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
+   return re.test(password);
+}
 
 
 function validateEmail(email) {
