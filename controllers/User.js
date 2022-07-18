@@ -19,6 +19,9 @@ const register = async (req,res) => {
 
     if(!validateEmail(email))
       return res.status(400).json({msg:"Invalid emails"})
+      if(!validatePassword(password)) {
+         return res.status(400).send({msg: "password must contain atleast one upper case and a number"})
+         }
       
       let user = await User.findOne({email})
       if(user) return res.status(400).json({msg:"this email already exists"})
@@ -81,10 +84,7 @@ const login = async (req,res) => {
      const {email, password} = req.body;
      if(!email || !password) 
      return res.status(400).send({msg: "please fill in all the fields."})
-     
-     if(!validatePassword(password)) {
-      return res.status(400).send({msg: "password must contain atleast one upper case and a number"})
-      }
+   
      const user = await User.findOne({email})
      if(!user) return res.status(400).send({msg:"this email does not exist"})
 
